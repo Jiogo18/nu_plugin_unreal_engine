@@ -21,3 +21,18 @@ Hello, Ellie. How are you today?
 > ue --shout Ellie
 HELLO, ELLIE. HOW ARE YOU TODAY?
 ```
+
+## Features
+
+- [ ] Wrapper for UnrealEditor-Cmd (UE5.5)
+    - [ ] Start the editor
+    - [ ] Start a game
+    - [ ] Start a server 
+- [ ] Export uasset header with [uasset-rs](https://github.com/jorgenpt/uasset-rs) ([fork for UE5.5](https://github.com/thibaultleouay/uasset-rs))
+    - [ ] List assets redirectors
+    - [ ] List level assets and their actors (in case of Level Streaming)
+- [ ] Integration with git-lfs
+    - [ ] Checkout by ignoring large files that are locked by Unreal Engine
+    - [ ] List changed actors of Level Streaming
+- [ ] Watch build status and emit events
+    - [ ] AppData/Local/UnrealBuildTool/Log.txt
