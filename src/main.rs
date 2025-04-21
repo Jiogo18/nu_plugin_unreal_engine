@@ -1,5 +1,8 @@
 use nu_plugin::{MsgPackSerializer, Plugin, PluginCommand, serve_plugin};
 
+mod commands;
+pub use commands::*;
+
 pub struct UnrealEnginePlugin;
 
 impl Plugin for UnrealEnginePlugin {
@@ -9,6 +12,7 @@ impl Plugin for UnrealEnginePlugin {
 
     fn commands(&self) -> Vec<Box<dyn PluginCommand<Plugin = Self>>> {
         vec![
+            Box::new(UE),
         ]
     }
 }
