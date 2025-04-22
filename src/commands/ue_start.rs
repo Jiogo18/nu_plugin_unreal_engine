@@ -22,29 +22,35 @@ impl SimplePluginCommand for UEStart {
     fn signature(&self) -> Signature {
         Signature::build(self.name())
             .optional("uproject_path", SyntaxShape::Filepath, "Path to a uproject")
-            .required("target2", SyntaxShape::OneOf(vec![
-                SyntaxShape::Keyword(b"uproject".to_vec(), Box::new(SyntaxShape::String)), 
-            ]), "Path to a uproject")
-            // .switch("target", "Target to start", Some(vec![
-            //     "editor".to_string(),
-            //     "game".to_string(),
-            //     "server".to_string(),
-            // ]))
-            .switch("shout", "(FIXME) Yell it instead", None)
+            .required(
+                "target2",
+                SyntaxShape::OneOf(vec![SyntaxShape::Keyword(
+                    b"uproject".to_vec(),
+                    Box::new(SyntaxShape::Nothing),
+                )]),
+                "Path to a uproject",
+            )
+            .required("mode", SyntaxShape::String, "either 'client' or 'server'")
+            .switch("editor", "Target to start", Some('e'))
             .category(Category::Experimental)
     }
 
     fn examples(&self) -> Vec<Example> {
         vec![
             Example {
-                example: "ue Ellie",
-                description: "Say hello to Ellie",
-                result: Some(Value::test_string("Hello, Ellie. How are you today?")),
+                example: "ue start editor",
+                description: "Start the editor in the current project",
+                result: None,
             },
             Example {
-                example: "ue --shout Ellie",
-                description: "Shout hello to Ellie",
-                result: Some(Value::test_string("HELLO, ELLIE. HOW ARE YOU TODAY?")),
+                example: "ue start game",
+                description: "Start a client game in the current project",
+                result: None,
+            },
+            Example {
+                example: "ue start server",
+                description: "Start a server in the current project",
+                result: None,
             },
         ]
     }
@@ -57,24 +63,7 @@ impl SimplePluginCommand for UEStart {
         _input: &Value,
     ) -> Result<Value, LabeledError> {
         let name: String = call.req(0)?;
-        let mut greeting = format!("Hello, {name}. How are you today?");
-        if call.has_flag("shout")? {
-            greeting = greeting.to_uppercase();
-        }
+        let greeting = format!("Hello, {name}. How are you today?");
         Ok(Value::string(greeting, call.head))
     }
-}
-
-#[test]
-fn test_examples() -> Result<(), nu_protocol::ShellError> {
-    use nu_plugin_test_support::PluginTest;
-
-    // This will automatically run the examples specified in your command and compare their actual
-    // output against what was specified in the example.
-    //
-    // We recommend you add this test to any other commands you create, or remove it if the examples
-    // can't be tested this way.
-
-    PluginTest::new("unreal_engine", UnrealEnginePlugin.into())?
-        .test_command_examples(&UEStart)
 }

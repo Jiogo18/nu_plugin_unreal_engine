@@ -14,6 +14,7 @@ impl Plugin for UnrealEnginePlugin {
         vec![
             Box::new(FromUAsset),
             Box::new(UE),
+            Box::new(UEStart),
         ]
     }
 }
