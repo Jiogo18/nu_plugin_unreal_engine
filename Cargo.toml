@@ -10,6 +10,7 @@ license = "MIT"
 [dependencies]
 nu-plugin = "0.103.0"
 nu-protocol = "0.103.0"
+uasset = { version = "^0.5", git = "https://github.com/thibaultleouay/uasset-rs" }
 
 [dev-dependencies]
 nu-plugin-test-support = { version = "0.103.0" }

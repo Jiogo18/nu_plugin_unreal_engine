@@ -12,6 +12,7 @@ impl Plugin for UnrealEnginePlugin {
 
     fn commands(&self) -> Vec<Box<dyn PluginCommand<Plugin = Self>>> {
         vec![
+            Box::new(FromUAsset),
             Box::new(UE),
         ]
     }
