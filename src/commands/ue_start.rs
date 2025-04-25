@@ -1,7 +1,9 @@
-use nu_plugin::{EngineInterface, EvaluatedCall, SimplePluginCommand};
-use nu_protocol::{Category, Example, LabeledError, Signature, SyntaxShape, Value};
+use std::process::Command;
 
-use crate::UnrealEnginePlugin;
+use nu_plugin::{EngineInterface, EvaluatedCall, SimplePluginCommand};
+use nu_protocol::{Category, Example, LabeledError, Signature, Spanned, SyntaxShape, Value};
+
+use crate::{UnrealEnginePlugin, utils::uproject};
 
 pub struct UEStart;
 
@@ -16,40 +18,67 @@ impl SimplePluginCommand for UEStart {
     }
 
     fn description(&self) -> &str {
-        "(FIXME) help text for ue start"
+        "Start an Unreal Engine project in the editor, game or server"
     }
 
     fn signature(&self) -> Signature {
         Signature::build(self.name())
-            .optional("uproject_path", SyntaxShape::Filepath, "Path to a uproject")
-            .required(
-                "target2",
-                SyntaxShape::OneOf(vec![SyntaxShape::Keyword(
-                    b"uproject".to_vec(),
-                    Box::new(SyntaxShape::Nothing),
-                )]),
-                "Path to a uproject",
+            // General options
+            .named(
+                "uproject_path",
+                SyntaxShape::Filepath,
+                "Path to a uproject, defaults is the .uproject file of the current directory",
+                Some('u'),
             )
-            .required("mode", SyntaxShape::String, "either 'client' or 'server'")
-            .switch("editor", "Target to start", Some('e'))
-            .category(Category::Experimental)
+            .switch("log", "Start with -log", Some('l'))
+            .named(
+                "level",
+                SyntaxShape::String,
+                "Override default level name to start from",
+                None,
+            )
+            .named(
+                "args",
+                SyntaxShape::String,
+                "Additional arguments to pass to UnrealEditor-Cmd",
+                None,
+            )
+            // Editor options
+            .switch("editor", "Start as an editor (default)", Some('e'))
+            // Game options
+            .switch("game", "Start as a game", Some('g'))
+            .switch("windowed", "Start in windowed mode (Game only)", Some('w'))
+            .named(
+                "port",
+                SyntaxShape::Int,
+                "Port to connect to the server (Game only)",
+                Some('p'),
+            )
+            // Server options
+            .switch("server", "Start as a server", Some('s'))
+            .switch(
+                "nosteam",
+                "Start a server with -nosteam flag (Server only)",
+                None,
+            )
+            .category(Category::Plugin)
     }
 
     fn examples(&self) -> Vec<Example> {
         vec![
             Example {
-                example: "ue start editor",
-                description: "Start the editor in the current project",
+                example: "ue start",
+                description: "Start the editor for the given project",
                 result: None,
             },
             Example {
-                example: "ue start game",
-                description: "Start a client game in the current project",
+                example: "ue start --game --windowed",
+                description: "Start a client game for the given project",
                 result: None,
             },
             Example {
-                example: "ue start server",
-                description: "Start a server in the current project",
+                example: "ue start --server --log",
+                description: "Start a server for the given project",
                 result: None,
             },
         ]
@@ -62,8 +91,71 @@ impl SimplePluginCommand for UEStart {
         call: &EvaluatedCall,
         _input: &Value,
     ) -> Result<Value, LabeledError> {
-        let name: String = call.req(0)?;
-        let greeting = format!("Hello, {name}. How are you today?");
-        Ok(Value::string(greeting, call.head))
+        let uproject_path: Option<Spanned<String>> = call.get_flag("uproject_path")?;
+        let level: Option<Spanned<String>> = call.get_flag("level")?;
+        let log: bool = call.has_flag("log")?;
+        let args: Option<Spanned<String>> = call.get_flag("args")?;
+        let editor: bool = call.has_flag("editor")?;
+        let game: bool = call.has_flag("game")?;
+        let windowed: bool = call.has_flag("windowed")?;
+        let port: Option<Spanned<i32>> = call.get_flag("port")?;
+        let server: bool = call.has_flag("server")?;
+        let nosteam: bool = call.has_flag("nosteam")?;
+
+        let mut command = Command::new("UnrealEditor-Cmd");
+
+        if let Some(uproject_path) = uproject_path {
+            command.arg(uproject_path.item);
+        } else {
+            command.arg(uproject::find_uproject()?);
+        }
+
+        if editor {
+            command.arg("-editor");
+        } else if game {
+            command.arg("-game");
+            if windowed {
+                command.arg("-windowed");
+            }
+            if let Some(port) = port {
+                command.arg("-port");
+                command.arg(port.item.to_string());
+            }
+        } else if server {
+            command.arg("-server");
+            if nosteam {
+                command.arg("-nosteam");
+            }
+        }
+
+        if log {
+            command.arg("-log");
+        }
+
+        if let Some(level) = level {
+            command.arg("-Level");
+            command.arg(level.item);
+        }
+
+        if let Some(args) = args {
+            command.arg(args.item);
+        }
+
+        // Execute the command and return the output
+        match command.spawn() {
+            Ok(child) => {
+                let output = child.wait_with_output().map_err(|e| {
+                    LabeledError::new(format!("Failed to wait for command: {}", e.to_string()))
+                })?;
+                Ok(Value::string(
+                    String::from_utf8_lossy(&output.stdout).to_string(),
+                    call.head,
+                ))
+            }
+            Err(e) => Err(LabeledError::new(format!(
+                "Failed to spawn command: {}",
+                e.to_string()
+            ))),
+        }
     }
 }

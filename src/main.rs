@@ -3,6 +3,8 @@ use nu_plugin::{MsgPackSerializer, Plugin, PluginCommand, serve_plugin};
 mod commands;
 pub use commands::*;
 
+mod utils;
+
 pub struct UnrealEnginePlugin;
 
 impl Plugin for UnrealEnginePlugin {
