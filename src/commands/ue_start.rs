@@ -1,4 +1,4 @@
-use std::process::Command;
+use std::{path::PathBuf, process::Command};
 
 use nu_plugin::{EngineInterface, EvaluatedCall, SimplePluginCommand};
 use nu_protocol::{Category, Example, LabeledError, Signature, Spanned, SyntaxShape, Value};
@@ -25,7 +25,7 @@ impl SimplePluginCommand for UEStart {
         Signature::build(self.name())
             // General options
             .named(
-                "uproject_path",
+                "uproject",
                 SyntaxShape::Filepath,
                 "Path to a uproject, defaults is the .uproject file of the current directory",
                 Some('u'),
@@ -91,7 +91,8 @@ impl SimplePluginCommand for UEStart {
         call: &EvaluatedCall,
         _input: &Value,
     ) -> Result<Value, LabeledError> {
-        let uproject_path: Option<Spanned<String>> = call.get_flag("uproject_path")?;
+        let uproject_path: PathBuf =
+            uproject::uproject_from_arg_or_current_dir(call.get_flag("uproject")?)?;
         let level: Option<Spanned<String>> = call.get_flag("level")?;
         let log: bool = call.has_flag("log")?;
         let args: Option<Spanned<String>> = call.get_flag("args")?;
@@ -104,37 +105,39 @@ impl SimplePluginCommand for UEStart {
 
         let mut command = Command::new("UnrealEditor-Cmd");
 
-        if let Some(uproject_path) = uproject_path {
-            command.arg(uproject_path.item);
-        } else {
-            command.arg(uproject::find_uproject()?);
+        command.arg(uproject_path);
+
+        if let Some(level) = level {
+            command.arg(level.item);
         }
 
         if editor {
             command.arg("-editor");
-        } else if game {
+        }
+
+        if game {
             command.arg("-game");
-            if windowed {
-                command.arg("-windowed");
-            }
-            if let Some(port) = port {
-                command.arg("-port");
-                command.arg(port.item.to_string());
-            }
-        } else if server {
+        }
+
+        if server {
             command.arg("-server");
-            if nosteam {
-                command.arg("-nosteam");
-            }
+        }
+
+        if windowed {
+            command.arg("-windowed");
+        }
+
+        if let Some(port) = port {
+            command.arg("-port");
+            command.arg(port.item.to_string());
+        }
+
+        if nosteam {
+            command.arg("-nosteam");
         }
 
         if log {
             command.arg("-log");
-        }
-
-        if let Some(level) = level {
-            command.arg("-Level");
-            command.arg(level.item);
         }
 
         if let Some(args) = args {
