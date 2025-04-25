@@ -110,19 +110,17 @@ impl UProject {
                 uproject_path.to_str().unwrap()
             )));
         }
-        let uproject_name = uproject_path.file_name().unwrap().to_str().unwrap();
+        let uproject_name = uproject_path.file_stem().unwrap().to_str().unwrap();
 
         // Check for uproject_path replace .uproject by .sln
         let sln_path = uproject_path
             .parent()
             .unwrap()
-            .join(uproject_name)
-            .join(".sln");
+            .join(uproject_name.to_owned() + ".sln");
         let code_workspace_path = uproject_path
             .parent()
             .unwrap()
-            .join(uproject_name)
-            .join(".code-workspace");
+            .join(uproject_name.to_owned() + ".code-workspace");
 
         let ide = if sln_path.exists() {
             if uproject_path.parent().unwrap().join(".idea").exists() {
