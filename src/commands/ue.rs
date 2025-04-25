@@ -38,11 +38,12 @@ impl SimplePluginCommand for UE {
     fn run(
         &self,
         _plugin: &UnrealEnginePlugin,
-        _engine: &EngineInterface,
+        engine: &EngineInterface,
         call: &EvaluatedCall,
         _input: &Value,
     ) -> Result<Value, LabeledError> {
-        let uproject_path = uproject::uproject_from_arg_or_current_dir(call.get_flag("uproject")?)?;
+        let uproject_path =
+            uproject::uproject_from_arg_or_current_dir(&engine, call.get_flag("uproject")?)?;
         let uproject = uproject::UProject::from_path(uproject_path)?;
 
         // Output as a record

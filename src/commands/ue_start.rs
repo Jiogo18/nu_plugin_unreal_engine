@@ -87,12 +87,12 @@ impl SimplePluginCommand for UEStart {
     fn run(
         &self,
         _plugin: &UnrealEnginePlugin,
-        _engine: &EngineInterface,
+        engine: &EngineInterface,
         call: &EvaluatedCall,
         _input: &Value,
     ) -> Result<Value, LabeledError> {
         let uproject_path: PathBuf =
-            uproject::uproject_from_arg_or_current_dir(call.get_flag("uproject")?)?;
+            uproject::uproject_from_arg_or_current_dir(&engine, call.get_flag("uproject")?)?;
         let level: Option<Spanned<String>> = call.get_flag("level")?;
         let log: bool = call.has_flag("log")?;
         let args: Option<Spanned<String>> = call.get_flag("args")?;

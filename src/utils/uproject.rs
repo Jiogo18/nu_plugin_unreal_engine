@@ -1,42 +1,38 @@
 use std::path::PathBuf;
 
+use nu_plugin::EngineInterface;
 use nu_protocol::LabeledError;
 
 /**
  * Returns the path to the .uproject file in the current directory
  */
-pub fn find_uproject() -> Result<PathBuf, LabeledError> {
-    let current_dir = std::env::current_dir().map_err(|e| {
-        LabeledError::new(format!(
-            "Failed to get current directory: {}",
-            e.to_string()
-        ))
-    })?;
-
-    let uproject_path = current_dir
-        .join(current_dir.file_name().unwrap())
-        .join(".uproject");
-
-    if uproject_path.exists() {
-        Ok(uproject_path)
-    } else {
-        // Find with any name
-        let uproject_path = current_dir.join(".uproject");
-
-        Err(LabeledError::new(format!(
+pub fn find_uproject(engine: &EngineInterface) -> Result<PathBuf, LabeledError> {
+    let current_dir = PathBuf::from(engine.get_current_dir()?);
+    current_dir
+        .read_dir()
+        .map_err(|e| {
+            LabeledError::new(format!(
+                "Failed to read current directory: {}",
+                e.to_string()
+            ))
+        })?
+        .filter_map(|entry| entry.ok())
+        .find(|entry| entry.file_name().to_str().unwrap().ends_with(".uproject"))
+        .map(|entry| entry.path())
+        .ok_or(LabeledError::new(format!(
             "Failed to find .uproject file in current directory: {}",
-            uproject_path.to_str().unwrap()
+            current_dir.to_str().unwrap()
         )))
-    }
 }
 
 pub fn uproject_from_arg_or_current_dir(
+    engine: &EngineInterface,
     uproject_path: Option<nu_protocol::Spanned<String>>,
 ) -> Result<PathBuf, LabeledError> {
     if let Some(uproject_path) = uproject_path {
         return Ok(PathBuf::from(uproject_path.item));
     } else {
-        return find_uproject();
+        return find_uproject(&engine);
     }
 }
 
@@ -93,9 +89,9 @@ fn get_unreal_engine_path(uproject_path: &PathBuf) -> Result<PathBuf, LabeledErr
 
     const CONTENT_END_PATH: &str =
         "Engine/Plugins/Runtime/USDCore/Content/Python/Lib/Win64/site-packages";
-    assert!(content.ends_with(CONTENT_END_PATH));
-
-    let engine_path = PathBuf::from(content.split(CONTENT_END_PATH).collect::<Vec<&str>>()[0]);
+    let content_split = content.split(CONTENT_END_PATH).collect::<Vec<&str>>();
+    assert!(content_split.len() == 2);
+    let engine_path = PathBuf::from(content_split[0]);
 
     if !engine_path.exists() {
         return Err(LabeledError::new(format!(
@@ -103,7 +99,7 @@ fn get_unreal_engine_path(uproject_path: &PathBuf) -> Result<PathBuf, LabeledErr
             engine_path.display()
         )));
     }
-    return Ok(PathBuf::from(content));
+    return Ok(engine_path);
 }
 
 impl UProject {
