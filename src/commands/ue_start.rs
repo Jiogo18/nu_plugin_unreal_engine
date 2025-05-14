@@ -3,7 +3,10 @@ use std::{path::PathBuf, process::Command};
 use nu_plugin::{EngineInterface, EvaluatedCall, SimplePluginCommand};
 use nu_protocol::{Category, Example, LabeledError, Signature, Spanned, SyntaxShape, Value};
 
-use crate::{UnrealEnginePlugin, utils::uproject};
+use crate::{
+    UnrealEnginePlugin,
+    utils::{ue_tools, uproject},
+};
 
 pub struct UEStart;
 
@@ -37,12 +40,6 @@ impl SimplePluginCommand for UEStart {
                 "Override default level name to start from",
                 None,
             )
-            .named(
-                "args",
-                SyntaxShape::String,
-                "Additional arguments to pass to UnrealEditor-Cmd",
-                None,
-            )
             // Editor options
             .switch("editor", "Start as an editor (default)", Some('e'))
             // Game options
@@ -61,6 +58,7 @@ impl SimplePluginCommand for UEStart {
                 "Start a server with -nosteam flag (Server only)",
                 None,
             )
+            .allows_unknown_args()
             .category(Category::Plugin)
     }
 
@@ -95,17 +93,21 @@ impl SimplePluginCommand for UEStart {
             uproject::uproject_from_arg_or_current_dir(&engine, call.get_flag("uproject")?)?;
         let level: Option<Spanned<String>> = call.get_flag("level")?;
         let log: bool = call.has_flag("log")?;
-        let args: Option<Spanned<String>> = call.get_flag("args")?;
         let editor: bool = call.has_flag("editor")?;
         let game: bool = call.has_flag("game")?;
         let windowed: bool = call.has_flag("windowed")?;
         let port: Option<Spanned<i32>> = call.get_flag("port")?;
         let server: bool = call.has_flag("server")?;
         let nosteam: bool = call.has_flag("nosteam")?;
+        let args: Vec<String> = call.rest(0).map_err(|e| LabeledError::new(e.to_string()))?;
 
-        let mut command = Command::new("UnrealEditor-Cmd");
+        let uproject = uproject::UProject::from_path(&uproject_path)?;
+        let unreal_editor_path = ue_tools::get_unreal_editor_path(&uproject.unreal_engine_path);
+        let mut command = Command::new(&unreal_editor_path);
 
-        command.arg(uproject_path);
+        command
+            .current_dir(&engine.get_current_dir()?)
+            .arg(uproject_path);
 
         if let Some(level) = level {
             command.arg(level.item);
@@ -140,25 +142,13 @@ impl SimplePluginCommand for UEStart {
             command.arg("-log");
         }
 
-        if let Some(args) = args {
-            command.arg(args.item);
-        }
+        command.args(&args);
 
         // Execute the command and return the output
-        match command.spawn() {
-            Ok(child) => {
-                let output = child.wait_with_output().map_err(|e| {
-                    LabeledError::new(format!("Failed to wait for command: {}", e.to_string()))
-                })?;
-                Ok(Value::string(
-                    String::from_utf8_lossy(&output.stdout).to_string(),
-                    call.head,
-                ))
-            }
-            Err(e) => Err(LabeledError::new(format!(
-                "Failed to spawn command: {}",
-                e.to_string()
-            ))),
-        }
+        let output = ue_tools::run(&mut command)?;
+        Ok(Value::string(
+            String::from_utf8_lossy(&output.stdout).to_string(),
+            call.head,
+        ))
     }
 }

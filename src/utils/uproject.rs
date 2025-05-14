@@ -103,7 +103,7 @@ fn get_unreal_engine_path(uproject_path: &PathBuf) -> Result<PathBuf, LabeledErr
 }
 
 impl UProject {
-    pub fn from_path(uproject_path: PathBuf) -> Result<UProject, LabeledError> {
+    pub fn from_path(uproject_path: &PathBuf) -> Result<UProject, LabeledError> {
         if !uproject_path.exists() {
             return Err(LabeledError::new(format!(
                 "Failed to find .uproject file in current directory: {}",

@@ -16,6 +16,8 @@ impl Plugin for UnrealEnginePlugin {
         vec![
             Box::new(FromUAsset),
             Box::new(UE),
+            Box::new(UEBuild),
+            Box::new(UERunUAT),
             Box::new(UEStart),
         ]
     }

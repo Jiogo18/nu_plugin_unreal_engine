@@ -44,7 +44,7 @@ impl SimplePluginCommand for UE {
     ) -> Result<Value, LabeledError> {
         let uproject_path =
             uproject::uproject_from_arg_or_current_dir(&engine, call.get_flag("uproject")?)?;
-        let uproject = uproject::UProject::from_path(uproject_path)?;
+        let uproject = uproject::UProject::from_path(&uproject_path)?;
 
         // Output as a record
         Ok(Value::record(
