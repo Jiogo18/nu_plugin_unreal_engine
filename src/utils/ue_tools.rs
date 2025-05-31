@@ -1,6 +1,6 @@
 use std::{
     path::PathBuf,
-    process::{Command, Output},
+    process::{Command, Output, Stdio},
 };
 
 use nu_protocol::LabeledError;
@@ -25,7 +25,11 @@ pub fn get_uat_path(unreal_engine_path: &PathBuf) -> PathBuf {
 }
 
 pub fn run(command: &mut Command) -> Result<Output, LabeledError> {
-    match command.spawn() {
+    match command
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()
+    {
         Ok(child) => child.wait_with_output().map_err(|e| {
             LabeledError::new(format!("Failed to wait for command: {}", e.to_string()))
         }),
