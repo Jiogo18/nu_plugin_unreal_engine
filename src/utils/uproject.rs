@@ -2,6 +2,7 @@ use std::path::PathBuf;
 
 use nu_plugin::EngineInterface;
 use nu_protocol::LabeledError;
+use regex::Regex;
 
 /**
  * Returns the path to the .uproject file in the current directory
@@ -63,35 +64,75 @@ pub struct UProject {
 
 // Assume uproject_path is valid
 // Get the Engine path of a project
-fn get_unreal_engine_path(uproject_path: &PathBuf) -> Result<PathBuf, LabeledError> {
+fn get_unreal_engine_path(uproject: &UProject) -> Result<PathBuf, LabeledError> {
     // Saved/Config/WindowsEditor/EditorPerProjectUserSettings.ini contains Directories2.Project, but not updated when moving UE
     // Intermediate/PipInstall/Lib/site-packages/plugin_site_package.pth is updated with any IDE
     const PIP_INSTALL_SITE_PACKAGE: &str =
         "Intermediate/PipInstall/Lib/site-packages/plugin_site_package.pth";
-    let pip_install_site_package = uproject_path
+    let pip_install_site_package = uproject
+        .uproject_path
         .parent()
         .unwrap()
         .join(PIP_INSTALL_SITE_PACKAGE);
-    if !pip_install_site_package.exists() {
+    let sln_path = uproject
+        .uproject_path
+        .parent()
+        .unwrap()
+        .join(uproject.name.to_owned() + ".sln");
+
+    let engine_path = if sln_path.exists() {
+        // open Vestige.sln | parse --regex "Project.+\"UnrealBuildTool\", *(.+), .+" | get capture0.0
+        let content = std::fs::read_to_string(&sln_path).map_err(|e| {
+            LabeledError::new(format!(
+                "Failed to read {}: {}",
+                sln_path.display(),
+                e.to_string()
+            ))
+        })?;
+        let re = Regex::new(r#"Project.+"UnrealBuildTool", *\"(.+)Engine[\\/]Source[\\/]Programs[\\/]UnrealBuildTool[\\/]UnrealBuildTool.csproj\", .+"#).unwrap();
+
+        let first_match: Option<String> = re
+            .captures_iter(&content)
+            .map(|cap| cap.get(1).map(|m| m.as_str().to_string()))
+            .flatten()
+            .next();
+
+        if first_match.is_none() {
+            return Err(LabeledError::new(format!(
+                "Failed to find Engine path in {}",
+                sln_path.display()
+            )));
+        }
+
+        let engine_relative_path = PathBuf::from(&first_match.unwrap());
+
+        uproject
+            .uproject_path
+            .parent()
+            .unwrap()
+            .join(engine_relative_path)
+
+    } else if pip_install_site_package.exists() {
+        let content = std::fs::read_to_string(pip_install_site_package).map_err(|e| {
+            LabeledError::new(format!(
+                "Failed to read {}: {}",
+                PIP_INSTALL_SITE_PACKAGE,
+                e.to_string()
+            ))
+        })?;
+
+        const CONTENT_END_PATH: &str =
+            "Engine/Plugins/Runtime/USDCore/Content/Python/Lib/Win64/site-packages";
+        let content_split = content.split(CONTENT_END_PATH).collect::<Vec<&str>>();
+        assert!(content_split.len() == 2);
+        PathBuf::from(content_split[0])
+    } else {
         return Err(LabeledError::new(format!(
-            "Failed to find {}",
+            "Failed to find {} or {} to get Engine path",
+            sln_path.display(),
             PIP_INSTALL_SITE_PACKAGE
         )));
-    }
-
-    let content = std::fs::read_to_string(pip_install_site_package).map_err(|e| {
-        LabeledError::new(format!(
-            "Failed to read {}: {}",
-            PIP_INSTALL_SITE_PACKAGE,
-            e.to_string()
-        ))
-    })?;
-
-    const CONTENT_END_PATH: &str =
-        "Engine/Plugins/Runtime/USDCore/Content/Python/Lib/Win64/site-packages";
-    let content_split = content.split(CONTENT_END_PATH).collect::<Vec<&str>>();
-    assert!(content_split.len() == 2);
-    let engine_path = PathBuf::from(content_split[0]);
+    };
 
     if !engine_path.exists() {
         return Err(LabeledError::new(format!(
@@ -134,13 +175,15 @@ impl UProject {
             IDE::Unknown
         };
 
-        let unreal_engine_path = get_unreal_engine_path(&uproject_path)?;
-
-        return Ok(UProject {
+        let mut uproject = UProject {
             uproject_path: uproject_path.clone(),
             name: uproject_name.to_string(),
             ide,
-            unreal_engine_path,
-        });
+            unreal_engine_path: PathBuf::new(),
+        };
+
+        uproject.unreal_engine_path = get_unreal_engine_path(&uproject)?;
+
+        return Ok(uproject);
     }
 }
