@@ -34,6 +34,7 @@ impl PluginCommand for UEStart {
                 Some('u'),
             )
             .switch("log", "Start with -log", Some('l'))
+            .switch("stdout", "Start with -stdout", None)
             .named(
                 "level",
                 SyntaxShape::String,
@@ -93,6 +94,7 @@ impl PluginCommand for UEStart {
             uproject::uproject_from_arg_or_current_dir(&engine, call.get_flag("uproject")?)?;
         let level: Option<Spanned<String>> = call.get_flag("level")?;
         let log: bool = call.has_flag("log")?;
+        let stdout: bool = call.has_flag("stdout")?;
         let editor: bool = call.has_flag("editor")?;
         let game: bool = call.has_flag("game")?;
         let windowed: bool = call.has_flag("windowed")?;
@@ -140,6 +142,10 @@ impl PluginCommand for UEStart {
 
         if log {
             command.arg("-log");
+        }
+
+        if stdout {
+            command.arg("-stdout");
         }
 
         command.args(&args);
