@@ -27,8 +27,8 @@ pub fn get_uat_path(unreal_engine_path: &PathBuf) -> PathBuf {
 pub fn run(command: &mut Command, span: Span) -> Result<PipelineData, LabeledError> {
     match command
         .stdin(Stdio::piped())
-        .stdout(Stdio::piped())
-        .stderr(Stdio::piped())
+        .stdout(Stdio::inherit())
+        .stderr(Stdio::inherit())
         .spawn()
     {
         Ok(child) => match child.wait_with_output() {
