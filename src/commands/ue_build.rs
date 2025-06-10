@@ -1,7 +1,7 @@
 use std::{path::PathBuf, process::Command};
 
-use nu_plugin::{EngineInterface, EvaluatedCall, SimplePluginCommand};
-use nu_protocol::{Category, Example, LabeledError, Signature, SyntaxShape, Value};
+use nu_plugin::{EngineInterface, EvaluatedCall, PluginCommand};
+use nu_protocol::{Category, Example, LabeledError, PipelineData, Signature, SyntaxShape};
 
 use crate::{
     UnrealEnginePlugin,
@@ -12,7 +12,7 @@ pub struct UEBuild;
 
 // https://dev.epicgames.com/documentation/en-us/unreal-engine/unreal-build-tool-in-unreal-engine
 
-impl SimplePluginCommand for UEBuild {
+impl PluginCommand for UEBuild {
     type Plugin = UnrealEnginePlugin;
 
     fn name(&self) -> &str {
@@ -48,8 +48,8 @@ impl SimplePluginCommand for UEBuild {
         _plugin: &UnrealEnginePlugin,
         engine: &EngineInterface,
         call: &EvaluatedCall,
-        _input: &Value,
-    ) -> Result<Value, LabeledError> {
+        _input: PipelineData,
+    ) -> Result<PipelineData, LabeledError> {
         let uproject_path: PathBuf =
             uproject::uproject_from_arg_or_current_dir(&engine, call.get_flag("uproject")?)?;
 
@@ -65,10 +65,6 @@ impl SimplePluginCommand for UEBuild {
             .args(&args);
 
         // Execute the command and return the output
-        let output = ue_tools::run(&mut command)?;
-        Ok(Value::string(
-            String::from_utf8_lossy(&output.stdout).to_string(),
-            call.head,
-        ))
+        ue_tools::run(&mut command, call.head)
     }
 }
