@@ -5,7 +5,7 @@ use nu_protocol::{Category, Example, LabeledError, PipelineData, Signature, Span
 
 use crate::{
     UnrealEnginePlugin,
-    utils::{ue_tools, uproject},
+    utils::{ue_paths, ue_tools, uproject},
 };
 
 pub struct UERunUAT;
@@ -58,7 +58,7 @@ impl PluginCommand for UERunUAT {
         let command_name: Spanned<String> = call.req(0)?;
         let args: Vec<String> = call.rest(1)?;
 
-        let unreal_uat_path = ue_tools::get_uat_path(&uproject.unreal_engine_path);
+        let unreal_uat_path = ue_paths::get_uat_path(&uproject.unreal_engine_path);
         let mut command = Command::new(&unreal_uat_path);
 
         command

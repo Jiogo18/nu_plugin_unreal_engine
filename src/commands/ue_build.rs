@@ -5,7 +5,7 @@ use nu_protocol::{Category, Example, LabeledError, PipelineData, Signature, Synt
 
 use crate::{
     UnrealEnginePlugin,
-    utils::{ue_tools, uproject},
+    utils::{ue_paths, ue_tools, uproject},
 };
 
 pub struct UEBuild;
@@ -56,7 +56,7 @@ impl PluginCommand for UEBuild {
         let args: Vec<String> = call.rest(0).map_err(|e| LabeledError::new(e.to_string()))?;
 
         let uproject = uproject::UProject::from_path(&uproject_path)?;
-        let unreal_build_path = ue_tools::get_ubt_path(&uproject.unreal_engine_path);
+        let unreal_build_path = ue_paths::get_ubt_path(&uproject.unreal_engine_path);
         let mut command = Command::new(&unreal_build_path);
 
         command
