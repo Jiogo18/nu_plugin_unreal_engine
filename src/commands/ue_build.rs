@@ -28,7 +28,7 @@ impl PluginCommand for UEBuild {
             .named(
                 "uproject",
                 SyntaxShape::Filepath,
-                "Path to a uproject, defaults is the .uproject file of the current directory",
+                "Path to a uproject, default is the .uproject file of the current directory",
                 Some('u'),
             )
             .allows_unknown_args()
@@ -37,8 +37,8 @@ impl PluginCommand for UEBuild {
 
     fn examples(&self) -> Vec<Example> {
         vec![Example {
-            example: "ue build VestigeServer Win64 Development",
-            description: "Build the current project",
+            example: "ue build VestigeEditor Win64 Development",
+            description: "Build the project with editor features",
             result: None,
         }]
     }

@@ -30,7 +30,7 @@ impl PluginCommand for UEStart {
             .named(
                 "uproject",
                 SyntaxShape::Filepath,
-                "Path to a uproject, defaults is the .uproject file of the current directory",
+                "Path to a uproject, default is the .uproject file of the current directory",
                 Some('u'),
             )
             .switch("log", "Start with -log", Some('l'))
@@ -67,17 +67,17 @@ impl PluginCommand for UEStart {
         vec![
             Example {
                 example: "ue start",
-                description: "Start the editor for the given project",
+                description: "Start the editor for the project",
                 result: None,
             },
             Example {
                 example: "ue start --game --windowed",
-                description: "Start a client game for the given project",
+                description: "Start a client game for the project",
                 result: None,
             },
             Example {
                 example: "ue start --server --log",
-                description: "Start a server for the given project",
+                description: "Start a server for the project",
                 result: None,
             },
         ]

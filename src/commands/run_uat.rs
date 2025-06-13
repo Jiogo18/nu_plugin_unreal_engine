@@ -29,7 +29,7 @@ impl PluginCommand for UERunUAT {
             .named(
                 "uproject",
                 SyntaxShape::Filepath,
-                "Path to a uproject, defaults is the .uproject file of the current directory",
+                "Path to a uproject, default is the .uproject file of the current directory",
                 Some('u'),
             )
             .allows_unknown_args()
@@ -39,7 +39,7 @@ impl PluginCommand for UERunUAT {
     fn examples(&self) -> Vec<Example> {
         vec![Example {
             example: "ue RunUAT BuildCookRun -clientconfig=Development",
-            description: "Execute RunUAT for the current project",
+            description: "Execute RunUAT for the project",
             result: None,
         }]
     }

@@ -21,7 +21,7 @@ impl SimplePluginCommand for UE {
             .named(
                 "uproject",
                 SyntaxShape::Filepath,
-                "Path to a uproject, defaults is the .uproject file of the current directory",
+                "Path to a uproject, default is the .uproject file of the current directory",
                 Some('u'),
             )
             .category(Category::Experimental)
@@ -30,7 +30,7 @@ impl SimplePluginCommand for UE {
     fn examples(&self) -> Vec<Example> {
         vec![Example {
             example: "ue",
-            description: "Get informations about the current project",
+            description: "Get informations about the project",
             result: None,
         }]
     }

@@ -48,11 +48,18 @@ impl PluginCommand for UESwitchVersion {
     }
 
     fn examples(&self) -> Vec<Example> {
-        vec![Example {
-            example: "ue switch-version 5.5",
-            description: "Switch the Unreal Engine version of the project",
-            result: None,
-        }]
+        vec![
+            Example {
+                example: "ue switch-version 5.5",
+                description: "Set the Unreal Engine version of the project",
+                result: None,
+            },
+            Example {
+                example: "ue switch-version 'C:/Program Files/Epic Games/UE_5.5'",
+                description: "Set the Unreal Engine version of the project",
+                result: None,
+            },
+        ]
     }
 
     fn run(
