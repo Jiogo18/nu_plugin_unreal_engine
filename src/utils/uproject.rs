@@ -111,7 +111,6 @@ fn get_unreal_engine_path(uproject: &UProject) -> Result<PathBuf, LabeledError> 
             .parent()
             .unwrap()
             .join(engine_relative_path)
-
     } else if pip_install_site_package.exists() {
         let content = std::fs::read_to_string(pip_install_site_package).map_err(|e| {
             LabeledError::new(format!(

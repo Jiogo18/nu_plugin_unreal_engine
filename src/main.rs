@@ -19,6 +19,10 @@ impl Plugin for UnrealEnginePlugin {
             Box::new(UEBuild),
             Box::new(UERunUAT),
             Box::new(UEStart),
+            Box::new(UEGenerateProjectFiles),
+            Box::new(UERegisterEngine),
+            Box::new(UESwitchVersion),
+            Box::new(UEUpdateFileAssociations),
         ]
     }
 }
