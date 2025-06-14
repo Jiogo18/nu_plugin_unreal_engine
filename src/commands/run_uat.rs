@@ -58,7 +58,7 @@ impl PluginCommand for UERunUAT {
         let command_name: Spanned<String> = call.req(0)?;
         let args: Vec<String> = call.rest(1)?;
 
-        let unreal_uat_path = ue_paths::get_uat_path(&uproject.unreal_engine_path);
+        let unreal_uat_path = ue_paths::get_uat_path(uproject.get_unreal_engine_path_str()?);
         let mut command = Command::new(&unreal_uat_path);
 
         command

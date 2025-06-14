@@ -104,7 +104,8 @@ impl PluginCommand for UEStart {
         let args: Vec<String> = call.rest(0).map_err(|e| LabeledError::new(e.to_string()))?;
 
         let uproject = uproject::UProject::from_path(&uproject_path)?;
-        let unreal_editor_path = ue_paths::get_unreal_editor_path(&uproject.unreal_engine_path);
+        let unreal_editor_path =
+            ue_paths::get_unreal_editor_path(uproject.get_unreal_engine_path_str()?);
         let mut command = Command::new(&unreal_editor_path);
 
         command

@@ -47,14 +47,17 @@ impl SimplePluginCommand for UE {
         let uproject = uproject::UProject::from_path(&uproject_path)?;
 
         // Output as a record
-        Ok(Value::record(
-            record! {
-                "uproject_path" => Value::string(uproject.uproject_path.display().to_string(), call.head),
-                "name" => Value::string(uproject.name, call.head),
-                "ide" => Value::string(uproject.ide.to_string(), call.head),
-                "unreal_engine_path" => Value::string(uproject.unreal_engine_path.display().to_string(), call.head),
-            },
-            call.head,
-        ))
+        let mut record = record! {
+            "uproject_path" => Value::string(uproject.uproject_path.display().to_string(), call.head),
+            "name" => Value::string(uproject.name, call.head),
+            "ide" => Value::string(uproject.ide.to_string(), call.head),
+        };
+        if let Some(path) = uproject.unreal_engine_path {
+            record.insert(
+                "unreal_engine_path",
+                Value::string(path.display().to_string(), call.head),
+            );
+        }
+        Ok(Value::record(record, call.head))
     }
 }

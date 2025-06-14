@@ -59,12 +59,12 @@ pub struct UProject {
     pub uproject_path: PathBuf,
     pub name: String,
     pub ide: IDE,
-    pub unreal_engine_path: PathBuf,
+    pub unreal_engine_path: Option<PathBuf>,
 }
 
 // Assume uproject_path is valid
 // Get the Engine path of a project
-fn get_unreal_engine_path(uproject: &UProject) -> Result<PathBuf, LabeledError> {
+fn get_unreal_engine_path(uproject: &UProject) -> Result<Option<PathBuf>, LabeledError> {
     // Saved/Config/WindowsEditor/EditorPerProjectUserSettings.ini contains Directories2.Project, but not updated when moving UE
     // Intermediate/PipInstall/Lib/site-packages/plugin_site_package.pth is updated with any IDE
     const PIP_INSTALL_SITE_PACKAGE: &str =
@@ -126,20 +126,18 @@ fn get_unreal_engine_path(uproject: &UProject) -> Result<PathBuf, LabeledError> 
         assert!(content_split.len() == 2);
         PathBuf::from(content_split[0])
     } else {
-        return Err(LabeledError::new(format!(
-            "Failed to find {} or {} to get Engine path",
+        println!(
+            "Warning: Failed to find {} or {} to get Engine path",
             sln_path.display(),
             PIP_INSTALL_SITE_PACKAGE
-        )));
+        );
+        return Ok(None);
     };
 
     if !engine_path.exists() {
-        return Err(LabeledError::new(format!(
-            "Failed to find {}",
-            engine_path.display()
-        )));
+        println!("Warning: Engine {} does not exist", engine_path.display());
     }
-    return Ok(engine_path);
+    return Ok(Some(engine_path));
 }
 
 impl UProject {
@@ -178,11 +176,20 @@ impl UProject {
             uproject_path: uproject_path.clone(),
             name: uproject_name.to_string(),
             ide,
-            unreal_engine_path: PathBuf::new(),
+            unreal_engine_path: None,
         };
 
         uproject.unreal_engine_path = get_unreal_engine_path(&uproject)?;
 
         return Ok(uproject);
+    }
+
+    pub fn get_unreal_engine_path_str(&self) -> Result<&PathBuf, LabeledError> {
+        match &self.unreal_engine_path {
+            Some(path) => Ok(&path),
+            None => Err(LabeledError::new(
+                "Unreal Engine path not found".to_string(),
+            )),
+        }
     }
 }
